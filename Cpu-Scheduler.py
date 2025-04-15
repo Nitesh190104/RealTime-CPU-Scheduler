@@ -55,4 +55,32 @@ def sjf(processes):
     time = processes[0]['arrival']
     pq = PriorityQueue()  # queue for ready processes
     next_process_idx = 0
+    
+    while next_process_idx < len(processes) or not pq.empty():
+        # Add all arrived processes to the priority queue
+        while next_process_idx < len(processes) and processes[next_process_idx]['arrival'] <= time:
+            # Arrival time used as a tie-breaker => burst time same
+            p = processes[next_process_idx]
+            pq.put((p['burst'], p['arrival'], p['pid']))
+            next_process_idx += 1
+
+        if pq.empty():
+            # If no process is ready, jump to the next arrival
+            if next_process_idx < len(processes):
+                time = processes[next_process_idx]['arrival']
+                continue
+            else:
+                break
+
+        # Get the process with the shortest burst time
+        burst, arrival, pid = pq.get()
+
+        # Add to result
+        result.append((pid, time, time + burst))
+
+        # Update time
+        time += burst
+
+    return result
+
 
