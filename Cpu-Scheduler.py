@@ -83,4 +83,25 @@ def sjf(processes):
 
     return result
 
+def round_robin(processes, quantum):
+    if not processes:
+        return []
+
+    # a copy of processes to avoid modifying the original data
+    processes = [p.copy() for p in processes]
+
+    # Sort processes by arrival time
+    processes.sort(key=lambda x: x['arrival'])
+
+    # Initialize variables
+    result = []
+    ready_queue = []  # Processes that have arrived and are waiting for CPU
+    time = processes[0]['arrival']  # Start time is the earliest arrival
+    remaining_burst = {p['pid']: p['burst'] for p in processes}
+    remaining_processes = len(processes)
+    next_arrival_idx = 0
+
+
+
+
 
