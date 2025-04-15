@@ -101,6 +101,90 @@ def round_robin(processes, quantum):
     remaining_processes = len(processes)
     next_arrival_idx = 0
 
+    while remaining_processes > 0:
+        # Add newly arrived processes to the ready queue
+        while next_arrival_idx < len(processes) and processes[next_arrival_idx]['arrival'] <= time:
+            ready_queue.append(processes[next_arrival_idx])
+            next_arrival_idx += 1
+
+        if not ready_queue:
+            # If no process is in the ready queue, jump to the next arrival time
+            if next_arrival_idx < len(processes):
+                time = processes[next_arrival_idx]['arrival']
+                continue
+            else:
+                break  # No more processes to execute
+
+        # Get the next process from the ready queue
+        current_process = ready_queue.pop(0)
+        pid = current_process['pid']
+
+        # Calculate actual execution time (either quantum or remaining burst time)
+        exec_time = min(quantum, remaining_burst[pid])
+
+        # Add to result
+        result.append((pid, time, time + exec_time))
+
+        # Update time and remaining burst
+        time += exec_time
+        remaining_burst[pid] -= exec_time
+
+        # Check if process is completed
+        if remaining_burst[pid] == 0:
+            remaining_processes -= 1
+        else:
+            # Process still has work to do, check if any new processes have arrived
+            # before adding it back to the ready queue
+            arrived_during_execution = []
+            while next_arrival_idx < len(processes) and processes[next_arrival_idx]['arrival'] <= time:
+                arrived_during_execution.append(processes[next_arrival_idx])
+                next_arrival_idx += 1
+
+            # Add the preempted process back to the ready queue after newly arrived processes
+            ready_queue.extend(arrived_during_execution)
+            ready_queue.append(current_process)
+
+    return result if result else [(0, 0, 0)]  # Ensure non-empty result to avoid errors
+
+
+def priority_scheduling(processes):
+    if not processes:
+        return []
+
+    # Create a copy of processes to avoid modifying the original data
+    processes = [p.copy() for p in processes]
+
+    # Sort by arrival time initially
+    processes.sort(key=lambda x: x['arrival'])
+
+    result = []
+    time = processes[0]['arrival']
+    remaining = len(processes)
+    completed = set()
+
+    while remaining > 0:
+        # Find available processes that have arrived
+        available = [p for p in processes if p['arrival'] <= time and p['pid'] not in completed]
+
+        if not available:
+            # Jump to next process arrival
+            next_arrival = min([p['arrival'] for p in processes if p['pid'] not in completed])
+            time = next_arrival
+            continue
+
+        # Find process with highest priority (lowest priority number)
+        selected = min(available, key=lambda x: x['priority'])
+
+        # Schedule the process
+        result.append((selected['pid'], time, time + selected['burst']))
+
+        # Update time and mark process as completed
+        time += selected['burst']
+        completed.add(selected['pid'])
+        remaining -= 1
+
+    return result
+
 
 
 
