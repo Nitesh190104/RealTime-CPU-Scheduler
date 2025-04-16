@@ -311,6 +311,89 @@ def update_time_quantum_visibility(*args):
         label_quantum.pack_forget()
         time_quantum.pack_forget()
 
+# GUI Setup with ttkbootstrap
+root = tk.Tk()
+root.title("CPU Scheduler")
+style = Style(theme="morph")
+
+# Set initial window size
+root.geometry("900x600")
+
+# Create a main frame with scrollbars
+main_container = ttk.Frame(root)
+main_container.pack(fill="both", expand=True)
+
+# Add a Canvas that will contain the scrollable content
+canvas = tk.Canvas(main_container)
+scrollbar_y = ttk.Scrollbar(main_container, orient="vertical", command=canvas.yview)
+scrollbar_x = ttk.Scrollbar(main_container, orient="horizontal", command=canvas.xview)
+
+# Configure the canvas
+canvas.configure(yscrollcommand=scrollbar_y.set, xscrollcommand=scrollbar_x.set)
+canvas.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+
+# Place the scrollbars
+scrollbar_y.pack(side="right", fill="y")
+scrollbar_x.pack(side="bottom", fill="x")
+canvas.pack(side="left", fill="both", expand=True)
+
+# Create a frame inside the canvas that will contain all your UI elements
+content_frame = ttk.Frame(canvas)
+canvas_window = canvas.create_window((0, 0), window=content_frame, anchor="nw")
+
+# Adjust canvas window size when frame size changes
+def on_frame_configure(event):
+    canvas.configure(scrollregion=canvas.bbox("all"))
+    # Make the canvas window the width of the canvas
+    canvas.itemconfig(canvas_window, width=canvas.winfo_width())
+
+content_frame.bind("<Configure>", on_frame_configure)
+
+# Add mousewheel scrolling
+def _on_mousewheel(event):
+    canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+canvas.bind_all("<MouseWheel>", _on_mousewheel)
+
+# Add a title label to explain the additions
+ttk.Label(content_frame, text="CPU Scheduler",
+          font=("Arial", 16)).pack(side="top", pady=(10, 0))
+
+# Place all UI components inside content_frame instead of root
+# IMPROVED INPUT UI
+frame_input = ttk.LabelFrame(content_frame, text="Process Information")
+frame_input.pack(pady=10, padx=10, fill="x")
+
+# Create grid layout with better spacing
+input_grid = ttk.Frame(frame_input)
+input_grid.pack(pady=10, padx=10)
+
+# Labels
+ttk.Label(input_grid, text="PID:").grid(row=0, column=0, padx=(5, 2), sticky="e")
+ttk.Label(input_grid, text="Arrival Time:").grid(row=0, column=2, padx=(10, 2), sticky="e")
+ttk.Label(input_grid, text="Burst Time:").grid(row=1, column=0, padx=(5, 2), pady=5, sticky="e")
+ttk.Label(input_grid, text="Priority:").grid(row=1, column=2, padx=(10, 2), pady=5, sticky="e")
+
+# Entry fields
+entry_pid = ttk.Entry(input_grid, width=8)
+entry_arrival = ttk.Entry(input_grid, width=8)
+entry_burst = ttk.Entry(input_grid, width=8)
+entry_priority = ttk.Entry(input_grid, width=8)
+
+entry_pid.grid(row=0, column=1, padx=(0, 10), sticky="w")
+entry_arrival.grid(row=0, column=3, padx=(0, 5), sticky="w")
+entry_burst.grid(row=1, column=1, padx=(0, 10), pady=5, sticky="w")
+entry_priority.grid(row=1, column=3, padx=(0, 5), pady=5, sticky="w")
+
+# Button frame
+button_frame = ttk.Frame(frame_input)
+button_frame.pack(pady=(0, 10), fill="x")
+
+# Center the buttons
+buttons_container = ttk.Frame(button_frame)
+buttons_container.pack(anchor="center")
+
+
 
 
 
