@@ -185,6 +185,47 @@ def priority_scheduling(processes):
 
     return result
 
+def calculate_and_display_metrics(schedule, processes):
+    if not schedule:
+        return
+
+    # Create a dictionary for processes for easy lookup
+    process_dict = {p['pid']: p for p in processes}
+
+    # Get the end time of the last process to complete
+    max_completion_time = max(task[2] for task in schedule)
+
+    # Dictionary to track completion time for each process
+    completion_times = {}
+
+    # Dictionary to calculate total running time for each process
+    running_times = {}
+
+    # For each process, find its segments in the schedule
+    for pid, start, end in schedule:
+        if pid not in running_times:
+            running_times[pid] = 0
+        running_times[pid] += (end - start)
+
+        # Update completion time (we want the max time when the process finishes)
+        completion_times[pid] = max(completion_times.get(pid, 0), end)
+
+    # Calculate waiting and turnaround times for each process
+    waiting_times = {}
+    turnaround_times = {}
+
+    for pid in completion_times:
+        # Turnaround time = completion time - arrival time
+        turnaround_times[pid] = completion_times[pid] - process_dict[pid]['arrival']
+
+        # Waiting time = turnaround time - burst time
+        waiting_times[pid] = turnaround_times[pid] - process_dict[pid]['burst']
+
+    # Calculate averages
+    avg_waiting_time = sum(waiting_times.values()) / len(waiting_times) if waiting_times else 0
+    avg_turnaround_time = sum(turnaround_times.values()) / len(turnaround_times) if turnaround_times else 0
+
+
 
 
 
