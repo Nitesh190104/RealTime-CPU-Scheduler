@@ -393,6 +393,45 @@ button_frame.pack(pady=(0, 10), fill="x")
 buttons_container = ttk.Frame(button_frame)
 buttons_container.pack(anchor="center")
 
+ttk.Button(buttons_container, text="Add Process", command=add_process, bootstyle=SUCCESS, width=12).grid(row=0, column=0, padx=5)
+ttk.Button(buttons_container, text="Delete", command=delete_process, bootstyle=DANGER, width=10).grid(row=0, column=1, padx=5)
+ttk.Button(buttons_container, text="Reset", command=reset_table, bootstyle=WARNING, width=10).grid(row=0, column=2, padx=5)
+
+frame_table = ttk.Frame(content_frame)
+frame_table.pack()
+
+columns = ("PID", "Arrival", "Burst", "Priority")
+table = ttk.Treeview(frame_table, columns=columns, show="headings")
+for col in columns:
+    table.heading(col, text=col)
+    table.column(col, width=80)
+table.pack()
+
+frame_controls = ttk.Frame(content_frame)
+frame_controls.pack(pady=10)
+
+# Updated algorithm selection - removed SRTF
+algo_var = tk.StringVar(value="FCFS")
+algo_var.trace("w", update_time_quantum_visibility)
+algo_menu = ttk.Combobox(frame_controls, textvariable=algo_var,
+                         values=["FCFS", "SJF", "Round Robin", "Priority"],
+                         state="readonly")
+algo_menu.pack(side="left", padx=5)
+
+label_quantum = ttk.Label(frame_controls, text="Time Quantum:")
+time_quantum = ttk.Entry(frame_controls, width=5)
+ttk.Button(frame_controls, text="Run Scheduler", command=calculate_scheduling, bootstyle=PRIMARY).pack(side="left",
+                                                                                                       padx=5)
+
+# Remove the chart frame
+frame_metrics = ttk.Frame(content_frame)
+frame_metrics.pack(pady=10, padx=10, fill="both", expand=True)
+
+# Initialize UI based on current algorithm
+update_time_quantum_visibility()
+
+root.mainloop()
+
 
 
 
