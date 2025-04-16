@@ -225,6 +225,92 @@ def calculate_and_display_metrics(schedule, processes):
     avg_waiting_time = sum(waiting_times.values()) / len(waiting_times) if waiting_times else 0
     avg_turnaround_time = sum(turnaround_times.values()) / len(turnaround_times) if turnaround_times else 0
 
+    # Calculate CPU utilization
+    # Get the first arrival time
+    first_arrival = min(p['arrival'] for p in processes)
+
+    # Total time from first arrival to completion
+    total_time = max_completion_time - first_arrival
+
+    # Sum of all process execution times
+    total_execution_time = sum(end - start for _, start, end in schedule)
+
+    # CPU utilization as a percentage
+    cpu_utilization = (total_execution_time / total_time) * 100 if total_time > 0 else 0
+
+    # Calculate throughput (processes per unit time)
+    number_of_processes = len(set(pid for pid, _, _ in schedule))
+    throughput = number_of_processes / total_time if total_time > 0 else 0
+
+    # Display the metrics
+    for widget in frame_metrics.winfo_children():
+        widget.destroy()
+
+    metrics_text = f"""
+    Performance Metrics:
+    - Average Waiting Time: {avg_waiting_time:.2f} time units
+    - Average Turnaround Time: {avg_turnaround_time:.2f} time units
+    - CPU Utilization: {cpu_utilization:.2f}%
+    - Throughput: {throughput:.4f} processes/time unit
+    """
+
+    # Create a table for individual process metrics
+    ttk.Label(frame_metrics, text=metrics_text, justify="left").pack(anchor="w", padx=10)
+
+    # Create a table for detailed per-process metrics
+    process_metrics_frame = ttk.Frame(frame_metrics)
+    process_metrics_frame.pack(pady=5, fill="x", expand=True)
+
+    columns = ("Process ID", "Arrival Time", "Burst Time", "Completion Time", "Turnaround Time", "Waiting Time")
+    process_metrics_table = ttk.Treeview(process_metrics_frame, columns=columns, show="headings")
+
+    for col in columns:
+        process_metrics_table.heading(col, text=col)
+        process_metrics_table.column(col, width=120)
+
+    for pid in sorted(completion_times.keys()):
+        process_metrics_table.insert("", "end", values=(
+            pid,
+            process_dict[pid]['arrival'],
+            process_dict[pid]['burst'],
+            completion_times[pid],
+            turnaround_times[pid],
+            waiting_times[pid]
+        ))
+
+    process_metrics_table.pack(fill="both", expand=True)
+
+
+def add_process():
+    try:
+        pid = int(entry_pid.get())
+        arrival = int(entry_arrival.get())
+        burst = int(entry_burst.get())
+        priority = int(entry_priority.get())
+        table.insert("", "end", values=(pid, arrival, burst, priority))
+    except ValueError:
+        messagebox.showerror("Error", "Invalid input. Please enter valid numbers.")
+
+
+def delete_process():
+    selected_item = table.selection()
+    if selected_item:
+        table.delete(selected_item)
+
+
+def reset_table():
+    for row in table.get_children():
+        table.delete(row)
+
+
+def update_time_quantum_visibility(*args):
+    if algo_var.get() == "Round Robin":
+        label_quantum.pack(side="left", padx=5)
+        time_quantum.pack(side="left", padx=5)
+    else:
+        label_quantum.pack_forget()
+        time_quantum.pack_forget()
+
 
 
 
