@@ -3,6 +3,8 @@ from ttkbootstrap import Style
 from ttkbootstrap.constants import *
 from tkinter import ttk, messagebox
 from queue import PriorityQueue
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 
 def calculate_scheduling():
@@ -55,7 +57,7 @@ def sjf(processes):
     time = processes[0]['arrival']
     pq = PriorityQueue()  # queue for ready processes
     next_process_idx = 0
-    
+
     while next_process_idx < len(processes) or not pq.empty():
         # Add all arrived processes to the priority queue
         while next_process_idx < len(processes) and processes[next_process_idx]['arrival'] <= time:
@@ -82,6 +84,7 @@ def sjf(processes):
         time += burst
 
     return result
+
 
 def round_robin(processes, quantum):
     if not processes:
@@ -185,6 +188,7 @@ def priority_scheduling(processes):
 
     return result
 
+
 def calculate_and_display_metrics(schedule, processes):
     if not schedule:
         return
@@ -226,16 +230,9 @@ def calculate_and_display_metrics(schedule, processes):
     avg_turnaround_time = sum(turnaround_times.values()) / len(turnaround_times) if turnaround_times else 0
 
     # Calculate CPU utilization
-    # Get the first arrival time
     first_arrival = min(p['arrival'] for p in processes)
-
-    # Total time from first arrival to completion
     total_time = max_completion_time - first_arrival
-
-    # Sum of all process execution times
     total_execution_time = sum(end - start for _, start, end in schedule)
-
-    # CPU utilization as a percentage
     cpu_utilization = (total_execution_time / total_time) * 100 if total_time > 0 else 0
 
     # Calculate throughput (processes per unit time)
@@ -279,6 +276,55 @@ def calculate_and_display_metrics(schedule, processes):
         ))
 
     process_metrics_table.pack(fill="both", expand=True)
+    
+    # Create and display Gantt chart
+    display_gantt_chart(schedule, process_dict)
+
+
+def display_gantt_chart(schedule, process_dict):
+    # Create a new frame for the Gantt chart
+    gantt_frame = ttk.Frame(frame_metrics)
+    gantt_frame.pack(pady=10, fill="both", expand=True)
+    
+    # Create a matplotlib figure
+    fig, ax = plt.subplots(figsize=(10, 3))
+    fig.subplots_adjust(bottom=0.2)
+    
+    # Get unique process IDs and assign colors
+    unique_pids = list(set(pid for pid, _, _ in schedule))
+    colors = plt.cm.tab20.colors  # Using a colormap for distinct colors
+    
+    # Plot each process segment
+    for i, (pid, start, end) in enumerate(schedule):
+        color = colors[unique_pids.index(pid) % len(colors)]
+        ax.broken_barh([(start, end - start)], (5, 10), facecolors=color)
+        # Add label in the middle of the bar
+        ax.text((start + end) / 2, 10, f"P{pid}", ha='center', va='center', color='white')
+    
+    # Configure the chart
+    ax.set_yticks([10])
+    ax.set_yticklabels(['Processes'])
+    ax.set_xlabel('Time')
+    ax.set_title('Gantt Chart - Process Scheduling')
+    
+    # Calculate appropriate x-axis limits
+    max_time = max(end for _, _, end in schedule)
+    ax.set_xlim(0, max_time + 1)
+    
+    # Add grid lines for better readability
+    ax.grid(True, axis='x')
+    
+    # Create a legend showing process colors
+    legend_elements = []
+    for pid in sorted(unique_pids):
+        color = colors[unique_pids.index(pid) % len(colors)]
+        legend_elements.append(plt.Rectangle((0, 0), 1, 1, fc=color, label=f"P{pid}"))
+    ax.legend(handles=legend_elements, loc='upper right', bbox_to_anchor=(1, -0.1), ncol=min(10, len(unique_pids)))
+    
+    # Embed the matplotlib figure in the Tkinter window
+    canvas = FigureCanvasTkAgg(fig, master=gantt_frame)
+    canvas.draw()
+    canvas.get_tk_widget().pack(fill="both", expand=True)
 
 
 def add_process():
@@ -311,13 +357,14 @@ def update_time_quantum_visibility(*args):
         label_quantum.pack_forget()
         time_quantum.pack_forget()
 
+
 # GUI Setup with ttkbootstrap
 root = tk.Tk()
 root.title("CPU Scheduler")
 style = Style(theme="morph")
 
 # Set initial window size
-root.geometry("900x600")
+root.geometry("900x700")
 
 # Create a main frame with scrollbars
 main_container = ttk.Frame(root)
@@ -431,10 +478,3 @@ frame_metrics.pack(pady=10, padx=10, fill="both", expand=True)
 update_time_quantum_visibility()
 
 root.mainloop()
-
-
-
-
-
-
-
